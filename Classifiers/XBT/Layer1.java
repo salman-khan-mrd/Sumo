@@ -36,27 +36,27 @@ public class Layer1 {
         char delimiter = ',';
         RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
         recordReader.initialize(new FileSplit(new ClassPathResource("allDataset.txt").getFile()));
-        int labelIndex = 12;     //12 values in each row of the allDataset.txt; 12 input features and then class 0/1
+        int labelIndex = 243;     //243 values in each row of the allDataset.txt; 243 input features and then class 0/1
         int numClasses = 2;     //2 classes 0/1 
-        int batchSize = 1418;    //1418 examples total.
+        int samples= 1560;    //1418 examples total.
         DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numClasses);
         DataSet allData = iterator.next();
         allData.shuffle();
         KFoldIterator kf = new KFoldIterator(k, allData);
-         for (i = 0; i < 5; i++) {
+         for (i = 0; i < 10; i++) {
             DataSet trainingData = kf.next();
             DataSet testData = kf.testFold
             DataSet trainingData = testAndTrain.getTrain();
             DataSet testData = testAndTrain.getTest();
 														/* To normalize our data. We'll use NormalizeStandardize 
-														(which gives us mean 0, unit variance): */
+										(which gives us mean 0, unit variance): */
             DataNormalization normalizer = new NormalizerStandardize();
             normalizer.fit(trainingData);           
             normalizer.transform(trainingData);     
             normalizer.transform(testData);         
-            final int numInputs = 12;
+            final int numInputs = 243;
             int outputNum = 2;
-            int iterations =150;
+            int epoch=50;
             long seed = 12345L;
                 MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                     .seed(seed)
@@ -67,13 +67,17 @@ public class Layer1 {
                     .updater(Updater.ADAGRAD)
                     .regularization(true).l2(0.001)
                     .list()
-                    .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(12)
+                    .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(210)		//Input layer 
                         .build())
-                    .layer(1, new DenseLayer.Builder().nIn(12).nOut(10)
+                    .layer(1, new DenseLayer.Builder().nIn(210).nOut(125)			//Hidden layer 1
                         .build())
-                    .layer(2, new DenseLayer.Builder().nIn(10).nOut(2)
+                    .layer(2, new DenseLayer.Builder().nIn(125).nOut(102)			//Hidden layer 2
                         .build())
-                    .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+		    .layer(3, new DenseLayer.Builder().nIn(102).nOut(86)					//Hidden layer 3
+                        .build())
+		    .layer(4, new DenseLayer.Builder().nIn(86).nOut(20)						//Hidden layer 4
+                        .build())
+                    .layer(5, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)		//Output layer
                         .activation(Activation.SOFTMAX)
                         .nIn(2).nOut(outputNum).build())
                     .backprop(true).pretrain(false)
